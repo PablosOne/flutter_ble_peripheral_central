@@ -394,15 +394,21 @@ class BleCentralService: Service() {
         override fun onCharacteristicRead(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, status: Int) {
             handler.post {
                 if (characteristic.uuid == UUID.fromString(CHAR_FOR_READ_UUID)) {
-                    val strValue = characteristic.value.toString(Charsets.UTF_8)
-                    val log = "onCharacteristicRead " + when (status) {
-                        BluetoothGatt.GATT_SUCCESS -> "OK, value= $strValue"
-                        BluetoothGatt.GATT_READ_NOT_PERMITTED -> "not allowed"
-                        else -> "error $status"
+                    if(characteristic.value == null) {
+                        eventSink?.success(eventToJson("onCharacteristicRead", "onCharacteristicRead null value"))
+                        methodResult?.success(eventToJson("onCharacteristicRead", "onCharacteristicRead null value"))
+                        return@post
+                    } else {
+                        val strValue = characteristic.value.toString(Charsets.UTF_8)
+                        val log = "onCharacteristicRead " + when (status) {
+                            BluetoothGatt.GATT_SUCCESS -> "OK, value= $strValue"
+                            BluetoothGatt.GATT_READ_NOT_PERMITTED -> "not allowed"
+                            else -> "error $status"
+                        }
+                        eventSink?.success(eventToJson("onCharacteristicRead", strValue))
+                        //bleReadCharacteristic method call result
+                        methodResult?.success(strValue)
                     }
-                    eventSink?.success(eventToJson("onCharacteristicRead", strValue))
-                    //bleReadCharacteristic method call result
-                    methodResult?.success(strValue)
                 } else {
                     eventSink?.success(eventToJson("onCharacteristicRead","onCharacteristicRead unknown uuid $characteristic.uuid"))
                     methodResult?.success(eventToJson("onCharacteristicRead","onCharacteristicRead unknown uuid $characteristic.uuid"))
@@ -432,7 +438,7 @@ class BleCentralService: Service() {
         override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
             handler.post {
                 if (characteristic.uuid == UUID.fromString(CHAR_FOR_INDICATE_UUID)) {
-                    val strValue = characteristic.value.toString(Charsets.UTF_8)
+                    val strValue = characteristic.value == null ? "" : characteristic.value.toString(Charsets.UTF_8)
                     eventSink?.success(eventToJson("onCharacteristicChanged", strValue))
                 } else {
                     eventSink?.success(eventToJson("onCharacteristicChanged", "onCharacteristicChanged unknown uuid $characteristic.uuid"))
